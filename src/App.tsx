@@ -5,8 +5,25 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
 import { eachWeekOfInterval, eachMonthOfInterval, format } from 'date-fns';
-
-import './App.css';
+import {
+  Button,
+  Checkbox,
+  FormControl,
+  FormControlLabel,
+  FormGroup,
+  Grid,
+  Input,
+  InputLabel,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography
+} from '@mui/material';
 
 interface CSVRow {
   Date: string;
@@ -202,95 +219,119 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className='App'>
-      <header className="App-header">
-        <p>Upload CSV File From Splitwise Export</p>
-        <form>
-          <input type="file" accept=".csv" onChange={handleFileUpload} />
-        </form>
-        <div>
-          <p>Select Date Range:</p>
-          <DatePicker
-            selected={startDate}
-            onChange={(date) => setStartDate(date || undefined)}
-            selectsStart
-            startDate={startDate}
-            endDate={endDate}
-            placeholderText="Start Date"
-          />
-          <DatePicker
-            selected={endDate}
-            onChange={(date) => setEndDate(date || undefined)}
-            selectsEnd
-            startDate={startDate}
-            endDate={endDate}
-            minDate={startDate}
-            placeholderText="End Date"
-          />
-        </div>
-        <div>
-          <p>Select Granularity:</p>
-          <select value={granularity} onChange={(e) => setGranularity(e.target.value)}>
-            <option value="default">Default</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
-        </div>
+    <div>
+      <header>
+        <Typography variant="h5">Upload CSV File From Splitwise Export</Typography>
+        <input type="file" accept=".csv" onChange={handleFileUpload} />
+        <Grid container spacing={3} alignItems="center" style={{ marginTop: '20px' }}>
+          <Grid item xs={12} md={3}>
+            <DatePicker
+              selected={startDate}
+              onChange={(date) => setStartDate(date || undefined)}
+              selectsStart
+              startDate={startDate}
+              endDate={endDate}
+              placeholderText="Start Date"
+              className="form-control"
+            />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <DatePicker
+              selected={endDate}
+              onChange={(date) => setEndDate(date || undefined)}
+              selectsEnd
+              startDate={startDate}
+              endDate={endDate}
+              minDate={startDate}
+              placeholderText="End Date"
+              className="form-control"
+            />
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth>
+              <InputLabel htmlFor="granularity">Select Granularity</InputLabel>
+              <Select
+                value={granularity}
+                onChange={(e) => setGranularity(e.target.value as string)}
+                input={<Input id="granularity" />}
+              >
+                <option value="default">Default</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+      </header>
 
-        <div>
-          {(selectedCategories.size > 0 || showTotal) && (
-            <div>
-              <h3>Total Expenses Over Time</h3>
+      <body>
+        {(selectedCategories.size > 0 || showTotal) && (
+          <Grid container spacing={3} style={{ marginTop: '20px' }}>
+            <Grid item xs={12}>
+              <Typography variant="h5">Total Expenses Over Time</Typography>
               <Line data={lineChartData} />
-            </div>
-          )}
-        </div>
+            </Grid>
+          </Grid>
+        )}
 
         {expensesByCategory.length > 0 && (
-          <div style={{ marginTop: '20px', maxHeight: '200px', overflowY: 'auto' }}>
-            <table className="expense-table">
-              <thead>
-                <tr>
-                  <th>Category</th>
-                  <th>Total Cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={showTotal}
-                        onChange={handleTotalCheckboxChange}
-                      />
-                      TOTAL
-                    </label>
-                  </td>
-                  <td>{Object.values(expenses).reduce((acc, categoryExpenses) => {
-                    return acc + Object.values(categoryExpenses).reduce((acc, curr) => acc + curr, 0);
-                  }, 0).toFixed(2)}</td>
-                </tr>
-                {expensesByCategory.map((item, index) => (
-                  <tr key={index}>
-                    <td>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={selectedCategories.has(item.category)}
-                          onChange={() => handleCheckboxChange(item.category)}
-                        />
-                        {item.category}
-                      </label>
-                    </td>
-                    <td>{item.totalCost.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </header>
+          <Grid container style={{ marginTop: '20px' }}>
+            <Grid item xs={12} md={6}>
+              <TableContainer component={Paper} style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Category</TableCell>
+                      <TableCell>Total Cost</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow key="TOTAL">
+                      <TableCell>
+                        <FormGroup>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={showTotal}
+                                onChange={handleTotalCheckboxChange}
+                              />
+                            }
+                            label="TOTAL"
+                          />
+                        </FormGroup>
+                      </TableCell>
+                      <TableCell>
+                        {Object.values(expenses).reduce((acc, categoryExpenses) => {
+                          return acc + Object.values(categoryExpenses).reduce((acc, curr) => acc + curr, 0);
+                        }, 0).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                    {expensesByCategory.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <FormGroup>
+                            <FormControlLabel
+                              control={
+                                <Checkbox
+                                  checked={selectedCategories.has(item.category)}
+                                  onChange={() => handleCheckboxChange(item.category)}
+                                />
+                              }
+                              label={item.category}
+                            />
+                          </FormGroup>
+                        </TableCell>
+                        <TableCell>{item.totalCost.toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Grid>
+          </Grid>
+        )}</body>
+
+
     </div>
   );
 };
