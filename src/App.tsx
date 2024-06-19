@@ -1,26 +1,26 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
-
-function App() {
-  return (
-    <div className="App">
+import React from 'react';                                                                 
+                                 
+import './App.css'
+const App: React.FC = () => {                                                              
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {               
+    const file = event.target.files && event.target.files[0];                              
+    if (file) {                                                                            
+      // Process the uploaded file here                                                    
+      console.log('Uploaded file:', file);                                                 
+    }                                                                                      
+  };                                                                                       
+                                                                                           
+  return (                                                                                 
+    <div className='App'>  
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+        <p>Upload CSV File From Splitwise Export</p>                                                             
+        <form>                                                                               
+          <input type="file" accept=".csv" onChange={handleFileUpload} />                    
+        </form>   
+      </header>                                                                           
+    </div>      
 
-export default App;
+  );                                                                                       
+};                                                                                         
+                                                                                           
+export default App; 
