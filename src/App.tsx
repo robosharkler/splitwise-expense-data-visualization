@@ -28,11 +28,13 @@ const App: React.FC = () => {
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [data, setData] = useState<Array<CSVRow>>([]);
   const [granularity, setGranularity] = useState<string>('default');
-  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set<string>());
+  const [showTotal, setShowTotal] = useState<boolean>(true);
 
   useEffect(() => {
     calculateExpenses();
-  }, [startDate, endDate, granularity]);
+  }, [startDate, endDate, granularity, data]);
+
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files && event.target.files[0];
@@ -98,12 +100,7 @@ const App: React.FC = () => {
     Object.keys(expenses).forEach(category => {
       aggregated[category] = {};
 
-      if (granularity === 'daily' || (granularity === 'default' && days <= 7)) {
-        // Day level granularity
-        Object.keys(expenses[category]).forEach(date => {
-          aggregated[category][date] = expenses[category][date];
-        });
-      } else if (granularity === 'weekly' || (granularity === 'default' && days < 30)) {
+      if (granularity === 'weekly' || (granularity === 'default' && days < 30)) {
         // Week level granularity
         const weeks = eachWeekOfInterval({ start: startDate!, end: endDate! });
         weeks.forEach(week => {
@@ -141,7 +138,7 @@ const App: React.FC = () => {
 
   // Function to generate datasets for selected categories
   const generateCategoryDatasets = () => {
-    const datasets = Array.from(selectedCategories).map((category, index) => ({
+    let datasets = Array.from(selectedCategories).map((category, index) => ({
       label: category,
       data: Object.keys(filteredTotalExpensesByDate[category] || {}).map(date => filteredTotalExpensesByDate[category][date]),
       fill: false,
@@ -149,12 +146,35 @@ const App: React.FC = () => {
       tension: 0.1,
     }));
 
+    if (showTotal) {
+      const totalData: { [date: string]: number } = {};
+      Object.keys(filteredTotalExpensesByDate).forEach(category => {
+        Object.keys(filteredTotalExpensesByDate[category]).forEach(date => {
+          if (!totalData[date]) {
+            totalData[date] = 0;
+          }
+          totalData[date] += filteredTotalExpensesByDate[category][date];
+        });
+      });
+
+      const totalDataset = {
+        label: 'TOTAL',
+        data: Object.keys(totalData).map(date => totalData[date]),
+        fill: false,
+        borderColor: `rgba(255,99,132,1)`, // Red color for total
+        tension: 0.1,
+      };
+      datasets.push(totalDataset);
+    }
+
     return datasets;
   };
 
+  const categoryDatasets = generateCategoryDatasets();
+
   const lineChartData = {
-    labels: Object.keys(filteredTotalExpensesByDate[selectedCategories.values().next().value] || {}),
-    datasets: generateCategoryDatasets(),
+    labels: Object.keys(categoryDatasets[0].data || {}),
+    datasets: categoryDatasets,
   };
 
   // Calculate expenses by category and sort them from high to low
@@ -174,6 +194,11 @@ const App: React.FC = () => {
       updatedCategories.add(category);
     }
     setSelectedCategories(updatedCategories);
+  };
+
+  // Function to handle TOTAL checkbox change
+  const handleTotalCheckboxChange = () => {
+    setShowTotal(!showTotal);
   };
 
   return (
@@ -207,14 +232,13 @@ const App: React.FC = () => {
           <p>Select Granularity:</p>
           <select value={granularity} onChange={(e) => setGranularity(e.target.value)}>
             <option value="default">Default</option>
-            <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
           </select>
         </div>
 
         <div>
-          {selectedCategories.size > 0 && (
+          {(selectedCategories.size > 0 || showTotal) && (
             <div>
               <h3>Total Expenses Over Time</h3>
               <Line data={lineChartData} />
@@ -232,6 +256,21 @@ const App: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
+                <tr>
+                  <td>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={showTotal}
+                        onChange={handleTotalCheckboxChange}
+                      />
+                      TOTAL
+                    </label>
+                  </td>
+                  <td>{Object.values(expenses).reduce((acc, categoryExpenses) => {
+                    return acc + Object.values(categoryExpenses).reduce((acc, curr) => acc + curr, 0);
+                  }, 0).toFixed(2)}</td>
+                </tr>
                 {expensesByCategory.map((item, index) => (
                   <tr key={index}>
                     <td>
