@@ -4,7 +4,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
-import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, format } from 'date-fns';
+import { eachWeekOfInterval, eachMonthOfInterval, format } from 'date-fns';
 
 import './App.css';
 
@@ -16,13 +16,19 @@ interface CSVRow {
   Currency: string;
 }
 
+interface ExpensesByCategory {
+  [category: string]: {
+    [date: string]: number;
+  };
+}
+
 const App: React.FC = () => {
-  const [expenses, setExpenses] = useState<Record<string, number>>({});
+  const [expenses, setExpenses] = useState<ExpensesByCategory>({});
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [data, setData] = useState<Array<CSVRow>>([]);
-  const [totalExpensesByDate, setTotalExpensesByDate] = useState<Record<string, number>>({});
   const [granularity, setGranularity] = useState<string>('default');
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     calculateExpenses();
@@ -57,9 +63,7 @@ const App: React.FC = () => {
   };
 
   const calculateExpenses = () => {
-    const expenseMap: Record<string, number> = {};
-    const totalExpensesMap: Record<string, number> = {};
-
+    const expenseMap: ExpensesByCategory = {};
     data.forEach((row) => {
       const rowDate = new Date(row['Date']);
       const formattedDate = rowDate.toISOString().split('T')[0];
@@ -69,92 +73,108 @@ const App: React.FC = () => {
         row['Category'] !== 'Payment' // Exclude 'Payment' category
       ) {
         const category = row['Category'];
-
         const cost = parseFloat(row['Cost']);
         if (!isNaN(cost)) {
-          if (expenseMap[category]) {
-            expenseMap[category] += cost;
-          } else {
-            expenseMap[category] = cost;
+          if (!expenseMap[category]) {
+            expenseMap[category] = {};
           }
-          if (totalExpensesMap[formattedDate]) {
-            totalExpensesMap[formattedDate] += cost;
+          if (expenseMap[category][formattedDate]) {
+            expenseMap[category][formattedDate] += cost;
           } else {
-            totalExpensesMap[formattedDate] = cost;
+            expenseMap[category][formattedDate] = cost;
           }
         }
       }
     });
 
     setExpenses(expenseMap);
-    setTotalExpensesByDate(totalExpensesMap);
   };
 
   const aggregateExpenses = () => {
     const interval = endDate && startDate ? endDate.getTime() - startDate.getTime() : 0;
     const days = Math.ceil(interval / (1000 * 60 * 60 * 24));
 
-    if (granularity === 'daily' || (granularity === 'default' && days <= 7)) {
-      // Day level granularity
-      return totalExpensesByDate;
-    } else if (granularity === 'weekly' || (granularity === 'default' && days < 30)) {
-      // Week level granularity
-      const aggregated: Record<string, number> = {};
-      const weeks = eachWeekOfInterval({ start: startDate!, end: endDate! });
+    const aggregated: ExpensesByCategory = {};
+    Object.keys(expenses).forEach(category => {
+      aggregated[category] = {};
 
-      weeks.forEach(week => {
-        const formattedWeek = format(week, 'yyyy-ww');
-        aggregated[formattedWeek] = 0;
-      });
+      if (granularity === 'daily' || (granularity === 'default' && days <= 7)) {
+        // Day level granularity
+        Object.keys(expenses[category]).forEach(date => {
+          aggregated[category][date] = expenses[category][date];
+        });
+      } else if (granularity === 'weekly' || (granularity === 'default' && days < 30)) {
+        // Week level granularity
+        const weeks = eachWeekOfInterval({ start: startDate!, end: endDate! });
+        weeks.forEach(week => {
+          const formattedWeek = format(week, 'yyyy-ww');
+          aggregated[category][formattedWeek] = 0;
+        });
 
-      Object.keys(totalExpensesByDate).forEach(date => {
-        const week = format(new Date(date), 'yyyy-ww');
-        if (aggregated[week] !== undefined) {
-          aggregated[week] += totalExpensesByDate[date];
-        }
-      });
+        Object.keys(expenses[category]).forEach(date => {
+          const week = format(new Date(date), 'yyyy-ww');
+          if (aggregated[category][week] !== undefined) {
+            aggregated[category][week] += expenses[category][date];
+          }
+        });
+      } else {
+        // Month level granularity (default)
+        const months = eachMonthOfInterval({ start: startDate!, end: endDate! });
+        months.forEach(month => {
+          const formattedMonth = format(month, 'yyyy-MM');
+          aggregated[category][formattedMonth] = 0;
+        });
 
-      return aggregated;
-    } else {
-      // Month level granularity (default)
-      const aggregated: Record<string, number> = {};
-      const months = eachMonthOfInterval({ start: startDate!, end: endDate! });
+        Object.keys(expenses[category]).forEach(date => {
+          const month = date.substring(0, 7); // yyyy-MM
+          if (aggregated[category][month] !== undefined) {
+            aggregated[category][month] += expenses[category][date];
+          }
+        });
+      }
+    });
 
-      months.forEach(month => {
-        const formattedMonth = format(month, 'yyyy-MM');
-        aggregated[formattedMonth] = 0;
-      });
-
-      Object.keys(totalExpensesByDate).forEach(date => {
-        const month = date.substring(0, 7); // yyyy-MM
-        if (aggregated[month] !== undefined) {
-          aggregated[month] += totalExpensesByDate[date];
-        }
-      });
-
-      return aggregated;
-    }
+    return aggregated;
   };
 
   const filteredTotalExpensesByDate = aggregateExpenses();
 
+  // Function to generate datasets for selected categories
+  const generateCategoryDatasets = () => {
+    const datasets = Array.from(selectedCategories).map((category, index) => ({
+      label: category,
+      data: Object.keys(filteredTotalExpensesByDate[category] || {}).map(date => filteredTotalExpensesByDate[category][date]),
+      fill: false,
+      borderColor: `rgba(${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)},1)`,
+      tension: 0.1,
+    }));
+
+    return datasets;
+  };
+
   const lineChartData = {
-    labels: Object.keys(filteredTotalExpensesByDate),
-    datasets: [
-      {
-        label: 'Total Expenses',
-        data: Object.values(filteredTotalExpensesByDate),
-        fill: false,
-        borderColor: 'rgba(75,192,192,1)',
-        tension: 0.1,
-      },
-    ],
+    labels: Object.keys(filteredTotalExpensesByDate[selectedCategories.values().next().value] || {}),
+    datasets: generateCategoryDatasets(),
   };
 
   // Calculate expenses by category and sort them from high to low
   const expensesByCategory = Object.entries(expenses)
-    .map(([category, totalCost]) => ({ category, totalCost }))
+    .map(([category, categoryExpenses]) => ({
+      category,
+      totalCost: Object.values(categoryExpenses).reduce((acc, curr) => acc + curr, 0),
+    }))
     .sort((a, b) => b.totalCost - a.totalCost);
+
+  // Function to handle checkbox change
+  const handleCheckboxChange = (category: string) => {
+    const updatedCategories = new Set(selectedCategories);
+    if (updatedCategories.has(category)) {
+      updatedCategories.delete(category);
+    } else {
+      updatedCategories.add(category);
+    }
+    setSelectedCategories(updatedCategories);
+  };
 
   return (
     <div className='App'>
@@ -194,7 +214,7 @@ const App: React.FC = () => {
         </div>
 
         <div>
-          {Object.keys(expenses).length > 0 && (
+          {selectedCategories.size > 0 && (
             <div>
               <h3>Total Expenses Over Time</h3>
               <Line data={lineChartData} />
@@ -214,7 +234,16 @@ const App: React.FC = () => {
               <tbody>
                 {expensesByCategory.map((item, index) => (
                   <tr key={index}>
-                    <td>{item.category}</td>
+                    <td>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={selectedCategories.has(item.category)}
+                          onChange={() => handleCheckboxChange(item.category)}
+                        />
+                        {item.category}
+                      </label>
+                    </td>
                     <td>{item.totalCost.toFixed(2)}</td>
                   </tr>
                 ))}
