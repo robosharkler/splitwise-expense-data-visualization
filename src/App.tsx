@@ -65,9 +65,11 @@ const App: React.FC = () => {
       const formattedDate = rowDate.toISOString().split('T')[0];
       if (
         (!startDate || rowDate >= startDate) &&
-        (!endDate || rowDate <= endDate)
+        (!endDate || rowDate <= endDate) &&
+        row['Category'] !== 'Payment' // Exclude 'Payment' category
       ) {
         const category = row['Category'];
+
         const cost = parseFloat(row['Cost']);
         if (!isNaN(cost)) {
           if (expenseMap[category]) {
