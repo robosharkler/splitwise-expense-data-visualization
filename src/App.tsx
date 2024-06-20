@@ -122,12 +122,12 @@ const App: React.FC = () => {
         // Week level granularity
         const weeks = eachWeekOfInterval({ start: startDate!, end: endDate! });
         weeks.forEach(week => {
-          const formattedWeek = format(week, 'yyyy-ww');
+          const formattedWeek = format(week, 'yyyy-MM');
           aggregated[category][formattedWeek] = 0;
         });
 
         Object.keys(expenses[category]).forEach(date => {
-          const week = format(new Date(date), 'yyyy-ww');
+          const week = format(new Date(date), 'yyyy-MM');
           if (aggregated[category][week] !== undefined) {
             aggregated[category][week] += expenses[category][date];
           }
@@ -141,7 +141,7 @@ const App: React.FC = () => {
         });
 
         Object.keys(expenses[category]).forEach(date => {
-          const month = date.substring(0, 7); // yyyy-MM
+          const month = format(new Date(date), 'yyyy-MM');
           if (aggregated[category][month] !== undefined) {
             aggregated[category][month] += expenses[category][date];
           }
@@ -158,7 +158,7 @@ const App: React.FC = () => {
   const generateCategoryDatasets = () => {
     let datasets = Array.from(selectedCategories).map((category, index) => ({
       label: category,
-      data: Object.keys(filteredTotalExpensesByDate[category] || {}).map(date => filteredTotalExpensesByDate[category][date]),
+      data: filteredTotalExpensesByDate[category] || {},
       fill: false,
       borderColor: `rgba(${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)},1)`,
       tension: 0.1,
@@ -177,7 +177,7 @@ const App: React.FC = () => {
 
       const totalDataset = {
         label: 'TOTAL',
-        data: Object.keys(totalData).map(date => totalData[date]),
+        data: totalData,
         fill: false,
         borderColor: `rgba(255,99,132,1)`, // Red color for total
         tension: 0.1,
