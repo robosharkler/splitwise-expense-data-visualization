@@ -26,6 +26,7 @@ import {
   Typography
 } from '@mui/material';
 import './App.css'
+import logo from './assets/bonfire.gif';
 
 interface CSVRow {
   Date: string;
@@ -338,8 +339,9 @@ const App: React.FC = () => {
               </div>
             </Grid>
           </Grid>
-        )}</body>
-
+        )}
+      </body>
+      <img src={logo} className="App-logo" alt="logo" />
     </div>
   );
 };
