@@ -24,6 +24,7 @@ import {
   TableRow,
   Typography
 } from '@mui/material';
+import './App.css'
 
 interface CSVRow {
   Date: string;
@@ -190,7 +191,7 @@ const App: React.FC = () => {
   const categoryDatasets = generateCategoryDatasets();
 
   const lineChartData = {
-    labels: Object.keys(categoryDatasets[0].data || {}),
+    labels: Object.keys(categoryDatasets[0]?.data || {}),
     datasets: categoryDatasets,
   };
 
@@ -219,10 +220,14 @@ const App: React.FC = () => {
   };
 
   return (
-    <div>
-      <header>
-        <Typography variant="h5">Upload CSV File From Splitwise Export</Typography>
-        <input type="file" accept=".csv" onChange={handleFileUpload} />
+    <div className='App'>
+      <header className='App-header'>
+        <Typography variant="h5">Splitwise Expense Data Visulization</Typography>
+        <Input
+          type="file"
+          onChange={handleFileUpload}
+          inputProps={{accept:".csv", multiple:false}}
+        />
         <Grid container spacing={3} alignItems="center" style={{ marginTop: '20px' }}>
           <Grid item xs={12} md={3}>
             <DatePicker
@@ -268,69 +273,71 @@ const App: React.FC = () => {
         {(selectedCategories.size > 0 || showTotal) && (
           <Grid container spacing={3} style={{ marginTop: '20px' }}>
             <Grid item xs={12}>
-              <Typography variant="h5">Total Expenses Over Time</Typography>
-              <Line data={lineChartData} />
+              <div style={{ width: '80%', margin: 'auto auto' }}>
+                <Line data={lineChartData} options={{ maintainAspectRatio: false }} height={300} />
+              </div>
             </Grid>
           </Grid>
         )}
 
         {expensesByCategory.length > 0 && (
           <Grid container style={{ marginTop: '20px' }}>
-            <Grid item xs={12} md={6}>
-              <TableContainer component={Paper} style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Category</TableCell>
-                      <TableCell>Total Cost</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    <TableRow key="TOTAL">
-                      <TableCell>
-                        <FormGroup>
-                          <FormControlLabel
-                            control={
-                              <Checkbox
-                                checked={showTotal}
-                                onChange={handleTotalCheckboxChange}
-                              />
-                            }
-                            label="TOTAL"
-                          />
-                        </FormGroup>
-                      </TableCell>
-                      <TableCell>
-                        {Object.values(expenses).reduce((acc, categoryExpenses) => {
-                          return acc + Object.values(categoryExpenses).reduce((acc, curr) => acc + curr, 0);
-                        }, 0).toFixed(2)}
-                      </TableCell>
-                    </TableRow>
-                    {expensesByCategory.map((item, index) => (
-                      <TableRow key={index}>
+            <Grid item xs={12}>
+              <div style={{ width: '80%', margin: 'auto auto' }}>
+                <TableContainer component={Paper} style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Category</TableCell>
+                        <TableCell>Total Cost</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      <TableRow key="TOTAL">
                         <TableCell>
                           <FormGroup>
                             <FormControlLabel
                               control={
                                 <Checkbox
-                                  checked={selectedCategories.has(item.category)}
-                                  onChange={() => handleCheckboxChange(item.category)}
+                                  checked={showTotal}
+                                  onChange={handleTotalCheckboxChange}
                                 />
                               }
-                              label={item.category}
+                              label="TOTAL"
                             />
                           </FormGroup>
                         </TableCell>
-                        <TableCell>{item.totalCost.toFixed(2)}</TableCell>
+                        <TableCell>
+                          {Object.values(expenses).reduce((acc, categoryExpenses) => {
+                            return acc + Object.values(categoryExpenses).reduce((acc, curr) => acc + curr, 0);
+                          }, 0).toFixed(2)}
+                        </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                      {expensesByCategory.map((item, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <FormGroup>
+                              <FormControlLabel
+                                control={
+                                  <Checkbox
+                                    checked={selectedCategories.has(item.category)}
+                                    onChange={() => handleCheckboxChange(item.category)}
+                                  />
+                                }
+                                label={item.category}
+                              />
+                            </FormGroup>
+                          </TableCell>
+                          <TableCell>{item.totalCost.toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </div>
             </Grid>
           </Grid>
         )}</body>
-
 
     </div>
   );
