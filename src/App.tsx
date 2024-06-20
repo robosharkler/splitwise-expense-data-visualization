@@ -14,6 +14,7 @@ import {
   Grid,
   Input,
   InputLabel,
+  MenuItem,
   Paper,
   Select,
   Table,
@@ -122,12 +123,12 @@ const App: React.FC = () => {
         // Week level granularity
         const weeks = eachWeekOfInterval({ start: startDate!, end: endDate! });
         weeks.forEach(week => {
-          const formattedWeek = format(week, 'yyyy-MM');
+          const formattedWeek = format(week, 'yyyy-ww');
           aggregated[category][formattedWeek] = 0;
         });
 
         Object.keys(expenses[category]).forEach(date => {
-          const week = format(new Date(date), 'yyyy-MM');
+          const week = format(new Date(date), 'yyyy-ww');
           if (aggregated[category][week] !== undefined) {
             aggregated[category][week] += expenses[category][date];
           }
@@ -226,7 +227,7 @@ const App: React.FC = () => {
         <Input
           type="file"
           onChange={handleFileUpload}
-          inputProps={{accept:".csv", multiple:false}}
+          inputProps={{ accept: ".csv", multiple: false }}
         />
         <Grid container spacing={3} alignItems="center" style={{ marginTop: '20px' }}>
           <Grid item xs={12} md={3}>
@@ -260,9 +261,9 @@ const App: React.FC = () => {
                 onChange={(e) => setGranularity(e.target.value as string)}
                 input={<Input id="granularity" />}
               >
-                <option value="default">Default</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
+                <MenuItem value={'default'}>Default</MenuItem>
+                <MenuItem value={'weekly'}>Weekly</MenuItem>
+                <MenuItem value={'monthly'}>Monthly</MenuItem>
               </Select>
             </FormControl>
           </Grid>
