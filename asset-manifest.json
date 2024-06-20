@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/splitwise-expense-data-visualization/static/css/main.256d4e3d.css",
+    "main.js": "/splitwise-expense-data-visualization/static/js/main.bd624e4a.js",
+    "static/js/453.185dc92a.chunk.js": "/splitwise-expense-data-visualization/static/js/453.185dc92a.chunk.js",
+    "static/media/bonfire.gif": "/splitwise-expense-data-visualization/static/media/bonfire.48759d0192c0e18ac164.gif",
+    "index.html": "/splitwise-expense-data-visualization/index.html",
+    "main.256d4e3d.css.map": "/splitwise-expense-data-visualization/static/css/main.256d4e3d.css.map",
+    "main.bd624e4a.js.map": "/splitwise-expense-data-visualization/static/js/main.bd624e4a.js.map",
+    "453.185dc92a.chunk.js.map": "/splitwise-expense-data-visualization/static/js/453.185dc92a.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.256d4e3d.css",
+    "static/js/main.bd624e4a.js"
+  ]
+}
